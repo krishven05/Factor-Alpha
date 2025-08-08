@@ -42,6 +42,3 @@ python src/main.py --ticker AAPL --show
 
 ## Config
 Edit `factor_alpha.yaml` to set defaults (dates, costs, weights, universe size). CLI flags override the config.
-
-## Notes
-- Active development has ended; PRs and issues may not be reviewed.
