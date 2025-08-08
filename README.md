@@ -1,8 +1,8 @@
-# Factor Alpha — Project complete
+# Factor Alpha
 
 Momentum & Multifactor backtesting toolkit on the S&P 500 universe.
 
-Status: Project complete. This repository is archived and provided as-is.
+
 
 ## Features
 - Monthly data loading with caching
