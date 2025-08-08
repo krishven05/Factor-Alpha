@@ -1,0 +1,11 @@
+# Global configuration for Factor Alpha
+start: "2015-01-01"
+end: "2024-12-31"
+universe: sp500
+limit: 0
+mom_window: 6
+cost_per_trade: 0.0005
+weights:
+  momentum: 0.4
+  value: 0.3
+  quality: 0.3

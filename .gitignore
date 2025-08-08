@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.build/
+.dist/
+.python-version
+
+# Virtual env
+venv/
+.env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Test/Cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project data & results
+data/cache/
+results/
+.tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
