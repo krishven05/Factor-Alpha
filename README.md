@@ -1,6 +1,8 @@
-# Factor Alpha
+# Factor Alpha — Project complete
 
 Momentum & Multifactor backtesting toolkit on the S&P 500 universe.
+
+Status: Project complete. This repository is archived and provided as-is.
 
 ## Features
 - Monthly data loading with caching
@@ -12,12 +14,12 @@ Momentum & Multifactor backtesting toolkit on the S&P 500 universe.
 
 ## Quickstart
 
-Create venv and install:
+Create a virtual environment and install dependencies:
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r requirements.txt
 ```
 
 Run a quick backtest (no plots):
@@ -41,22 +43,5 @@ python src/main.py --ticker AAPL --show
 ## Config
 Edit `factor_alpha.yaml` to set defaults (dates, costs, weights, universe size). CLI flags override the config.
 
-## Development
-- Formatting: black
-- Linting: ruff
-- Types: mypy
-- Tests: pytest
-
-Run checks locally:
-
-```bash
-pre-commit install
-pre-commit run --all-files
-pytest -q
-```
-
-## CI
-GitHub Actions runs linting and tests on PRs.
-
-## License
-MIT (add a LICENSE file as needed).
+## Notes
+- Active development has ended; PRs and issues may not be reviewed.
