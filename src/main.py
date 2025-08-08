@@ -1,19 +1,18 @@
-import os
-import sys
-import hashlib
-import warnings
 import argparse
-from pathlib import Path
+import hashlib
 import logging
-import yaml
+import sys
+import warnings
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import yaml
 
-from data import get_sp500_tickers, download_prices, fetch_fundamentals
-from factors import compute_momentum, compute_value, compute_quality
 from backtest import backtest_momentum, backtest_multifactor
+from data import download_prices, fetch_fundamentals, get_sp500_tickers
+from factors import compute_momentum, compute_quality, compute_value
 from metrics import print_metrics
 
 
@@ -72,7 +71,7 @@ def _load_or_download_prices(tickers, start, end, prefer_monthly=True, use_cache
         else:
             prices = download_prices(tickers, start, end)
     except Exception as e:
-        raise RuntimeError(f"Failed to download prices: {e}")
+        raise RuntimeError(f"Failed to download prices: {e}") from e
 
     # Cache
     try:
@@ -193,7 +192,14 @@ def run(args):
     cost = float(args.cost if args.cost is not None else cfg.get("cost_per_trade", 0.0005))
     weights = cfg.get("weights", {"momentum": 0.4, "value": 0.3, "quality": 0.3})
     mom_df = backtest_momentum(momentum, returns, cost_per_trade=cost)
-    mf_df = backtest_multifactor(momentum, value, quality, returns, cost_per_trade=cost, weights=weights)
+    mf_df = backtest_multifactor(
+        momentum,
+        value,
+        quality,
+        returns,
+        cost_per_trade=cost,
+        weights=weights,
+    )
 
     # 4b) Benchmark (SPY) and excess returns
     spy_prices = download_prices(["SPY"], start, end, interval="1mo")
@@ -212,8 +218,12 @@ def run(args):
         common_idx = common_idx.sort_values()
         if len(common_idx) == 0:
             raise RuntimeError("No overlapping dates between strategies and SPY")
-        mom_norm = mom_df.loc[common_idx, "Cumulative"] / mom_df.loc[common_idx, "Cumulative"].iloc[0]
-        mf_norm = mf_df.loc[common_idx, "Cumulative"] / mf_df.loc[common_idx, "Cumulative"].iloc[0]
+        mom_norm = (
+            mom_df.loc[common_idx, "Cumulative"] / mom_df.loc[common_idx, "Cumulative"].iloc[0]
+        )
+        mf_norm = (
+            mf_df.loc[common_idx, "Cumulative"] / mf_df.loc[common_idx, "Cumulative"].iloc[0]
+        )
         spy_norm = spy_curve.loc[common_idx] / spy_curve.loc[common_idx].iloc[0]
 
         plt.figure(figsize=(12, 6))
@@ -245,9 +255,15 @@ def run(args):
     common_idx_mf = mf_df.index.intersection(spy_ret.index)
     mf_excess = mf_df.loc[common_idx_mf, "Return"] - spy_ret.loc[common_idx_mf]
     if len(mom_excess) > 0:
-        print_metrics(pd.DataFrame({"Return": mom_excess, "Cumulative": (1+mom_excess).cumprod()}), "Momentum Excess")
+        print_metrics(
+            pd.DataFrame({"Return": mom_excess, "Cumulative": (1 + mom_excess).cumprod()}),
+            "Momentum Excess",
+        )
     if len(mf_excess) > 0:
-        print_metrics(pd.DataFrame({"Return": mf_excess, "Cumulative": (1+mf_excess).cumprod()}), "Multi-Factor Excess")
+        print_metrics(
+            pd.DataFrame({"Return": mf_excess, "Cumulative": (1 + mf_excess).cumprod()}),
+            "Multi-Factor Excess",
+        )
 
     # 7) Optional: ticker analysis
     if args.ticker:
@@ -273,8 +289,12 @@ def main():
     parser = argparse.ArgumentParser(description="Factor Alpha - Momentum & Multifactor")
     parser.add_argument("--start", default=None, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end", default=None, help="End date (YYYY-MM-DD)")
-    parser.add_argument("--limit", type=int, default=0, help="Limit number of tickers for faster runs")
-    parser.add_argument("--mom-window", type=int, default=None, help="Momentum lookback in months")
+    parser.add_argument(
+        "--limit", type=int, default=0, help="Limit number of tickers for faster runs"
+    )
+    parser.add_argument(
+        "--mom-window", type=int, default=None, help="Momentum lookback in months"
+    )
     parser.add_argument("--cost", type=float, default=None, help="Cost per trade")
     parser.add_argument("--no-cache", action="store_true", help="Disable price caching")
 
@@ -285,7 +305,9 @@ def main():
 
     # Ticker analysis
     parser.add_argument("--ticker", help="Analyze a specific ticker symbol")
-    parser.add_argument("--interactive", action="store_true", help="Interactive ticker lookup mode")
+    parser.add_argument(
+        "--interactive", action="store_true", help="Interactive ticker lookup mode"
+    )
 
     args = parser.parse_args()
 

@@ -1,11 +1,12 @@
-import pandas as pd
-import yfinance as yf
-import requests
-import time
+from concurrent.futures import as_completed, ThreadPoolExecutor
+import hashlib
 import io
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Optional
+import time
+
+import pandas as pd
+import requests
+import yfinance as yf
 
 
 CACHE_DIR = Path(__file__).resolve().parents[1] / "data" / "cache"
@@ -16,7 +17,7 @@ def _cache_path(name: str) -> Path:
     return CACHE_DIR / name
 
 
-def get_sp500_tickers(use_cache: bool = True, refresh: bool = False) -> List[str]:
+def get_sp500_tickers(use_cache: bool = True, refresh: bool = False) -> list[str]:
     """
     Get current S&P 500 tickers from Wikipedia (cached).
     Falls back to cached file on failure.
@@ -58,7 +59,7 @@ def get_sp500_tickers(use_cache: bool = True, refresh: bool = False) -> List[str
 
 
 def download_prices(
-    tickers: List[str],
+    tickers: list[str],
     start: str,
     end: str,
     interval: str = "1d",
@@ -76,7 +77,7 @@ def download_prices(
     df_list = []
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i : i + batch_size]
-        last_err: Optional[Exception] = None
+        last_err: Exception | None = None
         for attempt in range(retries):
             try:
                 data = yf.download(
@@ -89,10 +90,7 @@ def download_prices(
                     threads=threads,
                 )
                 # yf returns multiindex columns when multiple tickers
-                if isinstance(data.columns, pd.MultiIndex):
-                    close = data.get("Close")
-                else:
-                    close = data
+                close = data.get("Close") if isinstance(data.columns, pd.MultiIndex) else data
                 if close is None:
                     raise RuntimeError("No 'Close' data returned")
                 df_list.append(close)
@@ -130,7 +128,7 @@ def download_prices(
 
 
 def fetch_fundamentals(
-    tickers: List[str],
+    tickers: list[str],
     use_cache: bool = True,
     refresh: bool = False,
     max_workers: int = 10,
@@ -141,8 +139,6 @@ def fetch_fundamentals(
     Fetch trailing P/E and ROE for each ticker using yfinance.
     Cached to parquet by ticker set. Basic sanitization applied.
     """
-    import hashlib
-
     thash = hashlib.md5(
         ",".join(sorted(tickers)).encode()
     ).hexdigest()[:8]
@@ -154,8 +150,8 @@ def fetch_fundamentals(
         except Exception:
             pass
 
-    def fetch_one(t: str) -> Dict[str, Optional[float]]:
-        last_err: Optional[Exception] = None
+    def fetch_one(t: str) -> dict[str, float | None]:
+        _last_err: Exception | None = None
         for attempt in range(retries):
             try:
                 info = yf.Ticker(t).info
@@ -164,12 +160,12 @@ def fetch_fundamentals(
                     "ROE": info.get("returnOnEquity", None),
                 }
             except Exception as e:
-                last_err = e
+                _last_err = e
                 time.sleep(sleep * (attempt + 1))
         # final failure
         return {"PE": None, "ROE": None}
 
-    rows = {}
+    rows: dict[str, dict[str, float | None]] = {}
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(fetch_one, t): t for t in tickers}
         for f in as_completed(futures):
@@ -193,7 +189,9 @@ def fetch_fundamentals(
     for col in ["Value", "Quality"]:
         if col in funds.columns:
             funds[col] = funds[col].astype(float)
-            funds[col] = funds[col].clip(lower=funds[col].quantile(0.01), upper=funds[col].quantile(0.99))
+            lower = funds[col].quantile(0.01)
+            upper = funds[col].quantile(0.99)
+            funds[col] = funds[col].clip(lower=lower, upper=upper)
 
     # Drop rows missing both signals
     funds = funds.dropna(subset=["Value", "Quality"], how="all")

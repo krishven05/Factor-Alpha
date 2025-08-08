@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def zscore(series: pd.Series, clip: float = 5.0) -> pd.Series:
@@ -41,6 +41,9 @@ def compute_quality(funds: pd.DataFrame) -> pd.Series:
     """
     Quality signal = ROE directly (sanitized).
     """
-    q = funds.get("Quality", funds.get("ROE", pd.Series(index=funds.index, dtype=float))).astype(float)
+    q = funds.get(
+        "Quality",
+        funds.get("ROE", pd.Series(index=funds.index, dtype=float)),
+    ).astype(float)
     q[~np.isfinite(q)] = np.nan
     return q

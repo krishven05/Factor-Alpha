@@ -1,5 +1,4 @@
 import pandas as pd
-from typing import Optional, Dict, Set
 
 try:
     from .factors import zscore
@@ -21,7 +20,7 @@ def backtest_momentum(
     returns_next = returns.shift(-1)
 
     portfolio_returns = []
-    prev_holdings: Set[str] = set()
+    prev_holdings: set[str] = set()
 
     for date in momentum.index:
         if date not in returns_next.index:
@@ -55,7 +54,7 @@ def backtest_multifactor(
     quality: pd.Series,
     returns: pd.DataFrame,
     cost_per_trade: float = 0.0,
-    weights: Optional[Dict[str, float]] = None,
+    weights: dict[str, float] | None = None,
     frac: float = 0.2,
 ) -> pd.DataFrame:
     """
@@ -74,8 +73,8 @@ def backtest_multifactor(
     qual_z = zscore(quality)
 
     mf_returns = []
-    prev_longs: Set[str] = set()
-    prev_shorts: Set[str] = set()
+    prev_longs: set[str] = set()
+    prev_shorts: set[str] = set()
 
     for date in momentum.index:
         if date not in returns_next.index:
@@ -88,7 +87,11 @@ def backtest_multifactor(
         # Align static z-scores to current universe
         v = val_z.reindex(mom_row.index)
         q = qual_z.reindex(mom_row.index)
-        comp = weights["momentum"] * mom_z + weights["value"] * v + weights["quality"] * q
+        comp = (
+            weights["momentum"] * mom_z
+            + weights["value"] * v
+            + weights["quality"] * q
+        )
 
         longs = comp.nlargest(n).index
         shorts = comp.nsmallest(n).index
@@ -98,8 +101,12 @@ def backtest_multifactor(
 
         # Turnover: changes in long and short books
         longs_set, shorts_set = set(longs), set(shorts)
-        turnover = len(longs_set - prev_longs) + len(prev_longs - longs_set) \
-                 + len(shorts_set - prev_shorts) + len(prev_shorts - shorts_set)
+        turnover = (
+            len(longs_set - prev_longs)
+            + len(prev_longs - longs_set)
+            + len(shorts_set - prev_shorts)
+            + len(prev_shorts - shorts_set)
+        )
         prev_longs, prev_shorts = longs_set, shorts_set
 
         net = (gross_long - gross_short) - cost_per_trade * turnover

@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 from src.backtest import backtest_momentum
 
@@ -19,7 +18,7 @@ def test_next_period_alignment():
     )
     returns = prices.pct_change().dropna()
 
-    df = backtest_momentum(momentum, returns, cost_per_trade=0.0, top_frac=1/3)
+    df = backtest_momentum(momentum, returns, cost_per_trade=0.0, top_frac=1 / 3)
     # First tradable date is when we have next-period return
     assert df.index.min() >= returns.index.min()
     # Cumulative should be positive given choosing top each month in this toy example

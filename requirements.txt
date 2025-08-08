@@ -4,3 +4,5 @@ numpy
 matplotlib
 lxml
 requests
+pyyaml
+pyarrow

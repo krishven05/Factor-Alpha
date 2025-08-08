@@ -19,7 +19,7 @@ jobs:
       - name: Lint & Type-check
         run: |
           ruff --version
-          ruff check .
+          ruff check src tests
           black --check .
           mypy src || true
       - name: Tests
