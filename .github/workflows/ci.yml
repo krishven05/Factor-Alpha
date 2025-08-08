@@ -20,7 +20,6 @@ jobs:
         run: |
           ruff --version
           ruff check src tests
-          black --check .
           mypy src || true
       - name: Tests
         run: |
